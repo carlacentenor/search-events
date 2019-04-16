@@ -1,7 +1,8 @@
 import React, { Component } from "react";
 
 import "./App.css";
-
+import EventDetail from "./components/event-detail";
+import Modal from "./components/modal";
 class App extends Component {
   constructor(props) {
     super(props);
@@ -10,30 +11,35 @@ class App extends Component {
       textSearch: "",
       categories: [],
       categorySelect: "",
-      result :[]
+      result: [],
+      viewModal: false,
+      eventSelect: {name:"",description:""}
     };
 
-     this.handlerChange = this.handlerChange.bind(this);
+    this.handlerChange = this.handlerChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeCategorySelect = this.handleChangeCategorySelect.bind(this);
     this.handleResultSearch = this.handleResultSearch.bind(this);
+    this.handleOpenModal = this.handleOpenModal.bind(this);
+    this.handleCloseModal = this.handleCloseModal.bind(this);
   }
 
   componentDidMount() {
+
     this.handlerFetchFunction();
     this.handlerFetchCategories();
   }
 
   handlerFetchFunction() {
+    const TOKENOAUTH = 'ZBZO5XI2AEPNABAIHIMP';
     const url = `https://www.eventbriteapi.com/v3/events/search/?q=${
-      this.state.textSearch}&token=ZBZO5XI2AEPNABAIHIMP`;
+      this.state.textSearch}&token=${TOKENOAUTH}`;
     fetch(url)
       .then(response => {
         return response.json();
       })
       .then(
-        function(resultado) {
-    
+        function (resultado) {
           this.setState({
             data: resultado.events
           });
@@ -45,14 +51,14 @@ class App extends Component {
   }
 
   handlerFetchCategories() {
-    const url = `https://www.eventbriteapi.com/v3/categories/?token=ZBZO5XI2AEPNABAIHIMP `;
+    const TOKENOAUTH = 'ZBZO5XI2AEPNABAIHIMP';
+    const url = `https://www.eventbriteapi.com/v3/categories/?token=${TOKENOAUTH} `;
     fetch(url)
       .then(response => {
         return response.json();
       })
       .then(
-        function(resultado) {
-        
+        function (resultado) {
           this.setState({
             categories: resultado.categories
           });
@@ -64,7 +70,7 @@ class App extends Component {
   }
 
   handlerChange(event) {
-    
+
     const { value } = event.target;
     this.setState(
       {
@@ -74,36 +80,64 @@ class App extends Component {
     );
   }
 
-  handleChangeCategorySelect(event){
+  handleChangeCategorySelect(event) {
     const { value } = event.target;
     this.setState(
       {
         categorySelect: value
       }
-      
     );
-   
   }
 
-  handleResultSearch(){
- 
+  handleResultSearch() {
+
     const data1 = this.state.data;
     const category = this.state.categorySelect;
-    let dataResult = []; 
-    data1.forEach(element => {
-      if(element.category_id == category){
-        dataResult.push(element)
-      }
-      
-    });
-    this.setState(
-      {
-        result: dataResult
-      }
-      
-    );
+    let dataResult = [];
+
+    if (data1 && category) {
+      data1.forEach(element => {
+        if (element.category_id === category) {
+          dataResult.push(element)
+        }
+
+      });
+      this.setState(
+        {
+          result: dataResult
+        }
+      );
+    }
+    if (data1 && !category) {
+      this.setState(
+        {
+          result: data1
+        }
+      );
+    }
+
 
   }
+
+  handleOpenModal(dataSelect) {
+
+    this.setState(
+      {
+        viewModal: true,
+        eventSelect: dataSelect
+      }
+    );
+  }
+
+  handleCloseModal() {
+
+    this.setState(
+      {
+        viewModal: false
+      }
+    );
+  }
+
 
   handleSubmit(event) {
     event.preventDefault();
@@ -116,48 +150,70 @@ class App extends Component {
 
   render() {
     const { categories } = this.state;
-   const result = this.state.result;
- console.log(result)
+    const result = this.state.result;
+
     return (
       <div className="App">
-        <form onSubmit={this.handleSubmit}>
-          <input
-            name="textSearch"
-            value={this.state.textSearch}
-            onChange={this.handlerChange}
-            type="text"
-          />
-          <select onChange={this.handleChangeCategorySelect}>
-            {categories.map(category => (
-              <option value={category.id} key={category.id}>
-                {category.name}{" "}
-              </option>
-            ))}
-          </select>
-          <button className="btn btn-success" type="submit">Buscar</button>
-        </form>
-        <section>
-        
-     {result.length >0 ? 
+        <nav className="navbar navbar-light mb-3" style={{ backgroundColor: "#E93353" }}>
+          <p className="navbar-brand text-white" > Events  </p>
+        </nav>
+        <div className="d-flex justify-content-center">
+          <p>Busca tu evento por nombre o categoría</p>
+        </div>
+        <div className="container mb-3">
+          <form onSubmit={this.handleSubmit}>
+            <div className="row">
+              <div className="col">
+                <input
+                  name="textSearch"
+                  value={this.state.textSearch}
+                  onChange={this.handlerChange}
+                  type="text"
+                  className="form-control"
+                  placeholder="Ingresa un evento"
+                />
+              </div>
+              <div className="col">
+                <select onChange={this.handleChangeCategorySelect} className="form-control">
+                  <option value="">Selecciona una categoría</option>
+                  {categories.map(category => (
+                    <option value={category.id} key={category.id}>
+                      {category.name}{" "}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col">
+                <button className="btn  btn-color btn-block" type="submit">Buscar</button>
+              </div>
+            </div>
 
-        
-<div className="grid">
-{result.map(events => (
-  
-  <div className="card " key={events.id}>
-  <img src={events.logo? events.logo.original.url : 'logo.svg'  } className="card-img-top"/>
-  <div className="card-body">
-    <h5 className="card-title">{events.name.text}</h5>
-    <p className="card-text">{events.summary}</p>
-  </div>
-  
-  
-</div>
-))}
-</div>
-         : <p>No se encontraron resultados</p> }   
-           
+          </form>
+        </div>
+
+        <section>
+
+          {result.length > 0 ?
+
+            <div className="grid container">
+              {result.map(events => (
+                <EventDetail key={events.id}
+                  events={events}
+                  handleOpenModal={this.handleOpenModal}
+                  handleCloseModal={this.handleCloseModal}
+                  viewModal={this.state.viewModal} ></EventDetail>
+              ))}
+            </div>
+
+            : <div className="d-flex justify-content-center" ><p>No se encontraron resultados</p></div>}
+
         </section>
+        
+          <Modal viewModal={this.state.viewModal} handleCloseModal={this.handleCloseModal}
+            info={this.state.eventSelect}
+          ></Modal> 
+        
+
       </div>
     );
   }
